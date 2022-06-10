@@ -26,10 +26,18 @@ program jp_codebook
 		file write cb _char(34) `"`header'"' _char(34) ","
 	}
 	file write cb _n
+	loc num_lab_tot = 0
 	forvalues i = 1/`total_files'{
 		use "`file_`i''", clear
 			preserve
 			uselabel
+			count
+			loc num_lab = `r(N)'
+			local num_lab_tot = `num_lab_tot' + `num_lab'
+			if `num_lab' == 0{
+				restore
+			}
+			else{
 			drop trunc
 			tempfile lab_temp
 			save "`lab_temp'"
@@ -48,6 +56,7 @@ program jp_codebook
 			duplicates drop
 			save "`labl'", replace
 			restore
+			}
 			}
 		*** Exporting vars that come with built-in describe command
 			preserve
@@ -123,20 +132,44 @@ program jp_codebook
 		qui: replace `x' = round(`x', .001)
 	}
 	
+	qui: count
+	local var_n = `r(N)' + 1
 	export excel using  "codebook.xlsx", firstrow(variables) sheet("Variables") replace
 	rm "codebook_temp.csv"
 	
+	if `num_lab_tot' >0 {
 	use "`labl'",clear
+	qui: count
+	local val_n = `r(N)' + 1
 	export excel using  "codebook.xlsx", firstrow(variables) sheet("Value labels") 
-	
+	}
 	//Formatting
 	putexcel set codebook, modify sheet("Variables")
-	putexcel A1:K800, overwritefmt border(right) 
+	putexcel A1:K`var_n', overwritefmt border(all) 
 	putexcel save
+	if `num_lab_tot' >0 {
 	putexcel set codebook, modify sheet("Value labels")
-	putexcel A1:K800, overwritefmt border(right) 
+	putexcel A1:K`val_n', overwritefmt border(right) 
 	putexcel save
+	}
 
+	mata:b = xl()
+	mata:b.load_book("codebook.xlsx")
+	mata:b.set_sheet("Variables")
+	mata:b.set_column_width(1,1,33) //make title column widest
+	mata:b.set_column_width(2,2,75) //make each column fit title
+	mata:b.close_book()
+	
+	if `num_lab_tot' >0 {
+	mata:b = xl()
+	mata:b.load_book("codebook.xlsx")
+	mata:b.set_sheet("Value labels")
+	mata:b.set_column_width(1,1,33) //make title column widest
+	mata:b.set_column_width(3,3,75) //make each column fit title
+	mata:b.close_book()
+	}
+
+	
 	
 di ""
 di "---------------------------------------------------------------------"
