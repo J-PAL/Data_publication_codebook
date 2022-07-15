@@ -1,4 +1,6 @@
-local search_directory = "" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MAKE A CODEBOOK OF
+capture program drop jp_codebook
+program jp_codebook
+	syntax anything(name=search_directory id="path of directory to search")
 
 	
 ************ Getting list of files to loop through ***********************
@@ -176,5 +178,6 @@ di "Finished"
 di ""
 di "---------------------------------------------------------------------"
 di ""
+end 
 
 
