@@ -134,14 +134,14 @@ program jp_codebook
 	
 	qui: count
 	local var_n = `r(N)' + 1
-	export excel using  "codebook.xlsx", firstrow(variables) sheet("Variables") replace
+	export excel using  "codebook.xlsx", firstrow(variables) sheet("Variables") locale(C) replace
 	rm "codebook_temp.csv"
 	
 	if `num_lab_tot' >0 {
 	use "`labl'",clear
 	qui: count
 	local val_n = `r(N)' + 1
-	export excel using  "codebook.xlsx", firstrow(variables) sheet("Value labels") 
+	export excel using  "codebook.xlsx", firstrow(variables) sheet("Value labels") locale(C)
 	}
 	//Formatting
 	putexcel set codebook, modify sheet("Variables")
