@@ -1,4 +1,4 @@
-local search_directory = "" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MAKE A CODEBOOK OF
+local search_directory = "/Users/jackcavanagh/Dropbox (MIT)/PMT Improvements/Files for INEGI/Data/Progresa Data" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MAKE A CODEBOOK OF
 
 	
 ************ Getting list of files to loop through ***********************
@@ -20,7 +20,7 @@ local search_directory = "" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MA
 ********** Opening output file *************
 	capture file close cb
 	file open cb using codebook_temp.csv, write replace text
-		foreach header in "name" "min" "max" "median" "mean" "sd"{
+		foreach header in "dataset" "name" "min" "max" "median" "mean" "sd"{
 		file write cb _char(34) `"`header'"' _char(34) ","
 	}
 	file write cb _n
@@ -28,7 +28,7 @@ local search_directory = "" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MA
 	forvalues i = 1/`total_files'{
 		use "`file_`i''", clear
 			preserve
-			uselabel
+			uselabel, clear
 			count
 			loc num_lab = `r(N)'
 			local num_lab_tot = `num_lab_tot' + `num_lab'
@@ -38,11 +38,11 @@ local search_directory = "" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MA
 			else{
 			drop trunc
 			tempfile lab_temp
-			save "`lab_temp'"
+			save "`lab_temp'", replace
 			restore
 			if `i' == 1{
 			preserve
-			use "`lab_temp'"
+			use "`lab_temp'", clear
 			tempfile labl
 			save "`labl'", replace
 			restore
@@ -87,7 +87,9 @@ local search_directory = "" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MA
 			continue 
 			}
 			drop `nm2'
-			***First column: Var name
+			***First column: Dataset name
+			file write cb _char(34) `"`file_`i''"' _char(34) ","
+			***Second column: Var name
 			file write cb _char(34) `"`var'"' _char(34) ","
 			capture decode `var', gen(_`var')
 			if _rc==0{
@@ -117,19 +119,22 @@ local search_directory = "" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MA
 			}
  di "File `i' done"
 	}
+	
 	file close cb
 	import delimited "codebook_temp.csv", varnames(1) clear
 	duplicates drop name, force
 	merge 1:1 name using "`cb'",nogen
-	drop position v7 
+	drop position v8
 	duplicates drop name, force
 	order varlab vallab isnumeric type format, after(name)
+
+	replace dataset = subinstr(dataset,"`search_directory'","",.)
 	
 	foreach x of varlist min-sd{
 		qui: destring `x', force replace
 		qui: replace `x' = round(`x', .001)
 	}
-	
+	sort dataset 
 	qui: count
 	local var_n = `r(N)' + 1
 	export excel using  "codebook.xlsx", firstrow(variables) sheet("Variables") locale(C) replace
@@ -143,7 +148,7 @@ local search_directory = "" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MA
 	}
 	//Formatting
 	putexcel set codebook, modify sheet("Variables")
-	putexcel A1:K`var_n', overwritefmt border(all) 
+	putexcel A1:L`var_n', overwritefmt border(all) 
 	putexcel save
 	if `num_lab_tot' >0 {
 	putexcel set codebook, modify sheet("Value labels")
