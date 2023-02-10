@@ -1,4 +1,4 @@
-local search_directory = "/Users/jackcavanagh/Dropbox (MIT)/PMT Improvements/Files for INEGI/Data/Progresa Data" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MAKE A CODEBOOK OF
+local search_directory = "" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MAKE A CODEBOOK OF
 
 	
 ************ Getting list of files to loop through ***********************
