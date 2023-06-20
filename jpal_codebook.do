@@ -1,4 +1,4 @@
-local search_directory = "" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MAKE A CODEBOOK OF
+local search_directory = "/Users/jackcavanagh/Dropbox (MIT)/Digital_Credit_Malawi/Proposed_publication_package/Data" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MAKE A CODEBOOK OF
 
 	
 ************ Getting list of files to loop through ***********************
@@ -123,11 +123,12 @@ local search_directory = "" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MA
 	file close cb
 	import delimited "codebook_temp.csv", varnames(1) clear
 	duplicates drop name, force
-	merge 1:1 name using "`cb'",nogen
+	merge 1:1 name using "`cb'"
+	drop if _merge == 2
+	drop _merge
 	drop position v8
 	duplicates drop name, force
 	order varlab vallab isnumeric type format, after(name)
-
 	replace dataset = subinstr(dataset,"`search_directory'","",.)
 	
 	foreach x of varlist min-sd{
@@ -159,8 +160,8 @@ local search_directory = "" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MA
 	mata:b = xl()
 	mata:b.load_book("codebook.xlsx")
 	mata:b.set_sheet("Variables")
-	mata:b.set_column_width(1,1,33) //make title column widest
-	mata:b.set_column_width(2,2,75) //make each column fit title
+	mata:b.set_column_width(2,2,33) //make title column widest
+	mata:b.set_column_width(3,3,75) //make each column fit title
 	mata:b.close_book()
 	
 	if `num_lab_tot' >0 {
