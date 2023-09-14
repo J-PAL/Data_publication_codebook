@@ -2,7 +2,7 @@ capture program drop jp_codebook
 program jp_codebook
 	syntax anything(name=search_directory id="path of directory to search")
 
-	
+
 ************ Getting list of files to loop through ***********************
 	tempfile file_list 
 	filelist, directory(`search_directory') pattern("*.dta")
@@ -22,7 +22,7 @@ program jp_codebook
 ********** Opening output file *************
 	capture file close cb
 	file open cb using codebook_temp.csv, write replace text
-		foreach header in "name" "min" "max" "median" "mean" "sd"{
+		foreach header in "dataset" "name" "min" "max" "median" "mean" "sd"{
 		file write cb _char(34) `"`header'"' _char(34) ","
 	}
 	file write cb _n
@@ -30,7 +30,7 @@ program jp_codebook
 	forvalues i = 1/`total_files'{
 		use "`file_`i''", clear
 			preserve
-			uselabel
+			uselabel, clear
 			count
 			loc num_lab = `r(N)'
 			local num_lab_tot = `num_lab_tot' + `num_lab'
@@ -40,11 +40,11 @@ program jp_codebook
 			else{
 			drop trunc
 			tempfile lab_temp
-			save "`lab_temp'"
+			save "`lab_temp'", replace
 			restore
 			if `i' == 1{
 			preserve
-			use "`lab_temp'"
+			use "`lab_temp'", clear
 			tempfile labl
 			save "`labl'", replace
 			restore
@@ -89,7 +89,9 @@ program jp_codebook
 			continue 
 			}
 			drop `nm2'
-			***First column: Var name
+			***First column: Dataset name
+			file write cb _char(34) `"`file_`i''"' _char(34) ","
+			***Second column: Var name
 			file write cb _char(34) `"`var'"' _char(34) ","
 			capture decode `var', gen(_`var')
 			if _rc==0{
@@ -119,19 +121,23 @@ program jp_codebook
 			}
  di "File `i' done"
 	}
+	
 	file close cb
 	import delimited "codebook_temp.csv", varnames(1) clear
 	duplicates drop name, force
-	merge 1:1 name using "`cb'",nogen
-	drop position v7 
+	merge 1:1 name using "`cb'"
+	drop if _merge == 2
+	drop _merge
+	drop position v8
 	duplicates drop name, force
 	order varlab vallab isnumeric type format, after(name)
+	replace dataset = subinstr(dataset,"`search_directory'","",.)
 	
 	foreach x of varlist min-sd{
 		qui: destring `x', force replace
 		qui: replace `x' = round(`x', .001)
 	}
-	
+	sort dataset 
 	qui: count
 	local var_n = `r(N)' + 1
 	export excel using  "codebook.xlsx", firstrow(variables) sheet("Variables") locale(C) replace
@@ -145,7 +151,7 @@ program jp_codebook
 	}
 	//Formatting
 	putexcel set codebook, modify sheet("Variables")
-	putexcel A1:K`var_n', overwritefmt border(all) 
+	putexcel A1:L`var_n', overwritefmt border(all) 
 	putexcel save
 	if `num_lab_tot' >0 {
 	putexcel set codebook, modify sheet("Value labels")
@@ -156,8 +162,8 @@ program jp_codebook
 	mata:b = xl()
 	mata:b.load_book("codebook.xlsx")
 	mata:b.set_sheet("Variables")
-	mata:b.set_column_width(1,1,33) //make title column widest
-	mata:b.set_column_width(2,2,75) //make each column fit title
+	mata:b.set_column_width(2,2,33) //make title column widest
+	mata:b.set_column_width(3,3,75) //make each column fit title
 	mata:b.close_book()
 	
 	if `num_lab_tot' >0 {
@@ -178,6 +184,5 @@ di "Finished"
 di ""
 di "---------------------------------------------------------------------"
 di ""
-end 
-
+end
 
