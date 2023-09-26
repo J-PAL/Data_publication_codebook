@@ -25,7 +25,9 @@ local search_directory = "" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MA
 	}
 	file write cb _n
 	loc num_lab_tot = 0
+	loc boo = "0"
 	forvalues i = 1/`total_files'{
+		di "Using `file_`i''"
 		use "`file_`i''", clear
 			preserve
 			uselabel, clear
@@ -33,6 +35,9 @@ local search_directory = "" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MA
 			loc num_lab = `r(N)'
 			local num_lab_tot = `num_lab_tot' + `num_lab'
 			if `num_lab' == 0{
+				if `i' == 1 | "`boo'" == "1"{
+					local boo = "1"
+				}
 				restore
 			}
 			else{
@@ -40,8 +45,9 @@ local search_directory = "" //INSERT THE PATH TO THE FOLDER YOU WOULD LIKE TO MA
 			tempfile lab_temp
 			save "`lab_temp'", replace
 			restore
-			if `i' == 1{
+			if `i' == 1 | "`boo'" == "1"{
 			preserve
+			local boo = "0"
 			use "`lab_temp'", clear
 			tempfile labl
 			save "`labl'", replace
